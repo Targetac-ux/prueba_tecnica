@@ -45,13 +45,19 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/events
 
-      - name: Type check
+      - name: Type check API
         run: npx tsc --noEmit --project api/tsconfig.json
 
-      - name: Run tests
+      - name: Type check web
+        run: npx tsc --noEmit --project web/tsconfig.json
+
+      - name: Run API tests
         run: npm test --workspace=api
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/events
+
+      - name: Run web tests
+        run: npm test --workspace=web
 
   deploy:
     needs: test

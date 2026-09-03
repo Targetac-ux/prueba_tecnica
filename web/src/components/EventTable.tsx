@@ -67,7 +67,6 @@ function EventTable({ events, loading, error }: EventTableProps) {
                 onClick={() => toggleExpanded(event.id)}
                 onKeyDown={(e) => handleKeyDown(e, event.id)}
                 tabIndex={0}
-                role="button"
                 aria-expanded={isExpanded}
               >
                 <td data-label="Nivel">

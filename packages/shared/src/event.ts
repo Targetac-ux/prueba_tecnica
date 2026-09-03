@@ -3,12 +3,27 @@ import { z } from 'zod';
 export const EventLevelEnum = z.enum(['debug', 'info', 'warning', 'error', 'fatal']);
 export type EventLevel = z.infer<typeof EventLevelEnum>;
 
+const MAX_METADATA_DEPTH = 10;
+
+function exceedsMaxDepth(value: unknown, depth = 0): boolean {
+  if (depth > MAX_METADATA_DEPTH) return true;
+  if (value === null || typeof value !== 'object') return false;
+  const children = Array.isArray(value) ? value : Object.values(value as Record<string, unknown>);
+  return children.some((child) => exceedsMaxDepth(child, depth + 1));
+}
+
 export const CreateEventSchema = z.object({
   level: EventLevelEnum,
   message: z.string().min(1).max(10000),
   source: z.string().min(1).max(255),
   timestamp: z.string().datetime().optional(),
-  metadata: z.record(z.unknown()).optional().default({}),
+  metadata: z
+    .record(z.unknown())
+    .optional()
+    .default({})
+    .refine((value) => !exceedsMaxDepth(value), {
+      message: `metadata no puede tener más de ${MAX_METADATA_DEPTH} niveles de anidación`,
+    }),
 });
 
 export type CreateEventInput = z.infer<typeof CreateEventSchema>;
