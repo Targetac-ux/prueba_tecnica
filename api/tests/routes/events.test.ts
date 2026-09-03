@@ -130,8 +130,12 @@ describe('GET /events filters', () => {
 
 describe('GET /events cursor pagination', () => {
   beforeEach(async () => {
+    // Explicit, strictly increasing received_at values: back-to-back inserts
+    // can otherwise land on the same microsecond, and the id-based tie-break
+    // (a random UUID) would then make the page distribution non-deterministic.
+    const base = Date.now();
     for (let i = 0; i < 5; i++) {
-      await insertTestEvent({ message: `event ${i}` });
+      await insertTestEvent({ message: `event ${i}`, receivedAt: new Date(base + i * 1000).toISOString() });
     }
   });
 
