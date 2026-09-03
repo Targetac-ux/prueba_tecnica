@@ -1,0 +1,134 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  font-size: 0.9rem;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--color-bg);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.message {
+  max-width: 420px;
+}
+
+.expandedRow td {
+  background: var(--color-bg);
+}
+
+.metadata {
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stateMessage {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.errorState {
+  color: var(--color-level-error-text);
+}
+
+@media (max-width: 640px) {
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody {
+    display: block;
+    border: none;
+    background: transparent;
+  }
+
+  .row {
+    display: block;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    padding: 0.25rem 0;
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: none;
+    padding: 0.4rem 1rem;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    padding-top: 0.1rem;
+  }
+
+  .message {
+    max-width: none;
+    text-align: right;
+  }
+
+  .expandedRow {
+    display: block;
+    margin-top: -0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .expandedRow td {
+    display: block;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .expandedRow td::before {
+    content: none;
+  }
+}

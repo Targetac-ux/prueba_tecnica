@@ -1,0 +1,57 @@
+.app {
+  min-height: 100vh;
+}
+
+.header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.lastUpdated {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-right: auto;
+}
+
+.floatingToggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+}
+
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.loadMore {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.loadMore:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.loadMore:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
