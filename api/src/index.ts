@@ -13,8 +13,16 @@ import { logger } from './lib/logger.ts';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
+// CloudFront is the only reverse proxy in front of this server, so trust
+// exactly one hop: req.ip becomes the real client IP from X-Forwarded-For
+// instead of CloudFront's own edge IP. Without this, rate limiting by IP
+// would key on CloudFront instead of the actual caller.
+app.set('trust proxy', 1);
+
+const corsOrigins = (process.env.CORS_ORIGIN || '*').split(',').map((origin) => origin.trim());
+
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins }));
 app.use(express.json());
 app.use(requestId);
 
