@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: events
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Enable pg_trgm extension
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d events -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+
+      - name: Run migrations
+        run: npm run migrate --workspace=api
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/events
+
+      - name: Type check
+        run: npx tsc --noEmit --project api/tsconfig.json
+
+      - name: Run tests
+        run: npm test --workspace=api
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/events
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build --workspace=web
+        env:
+          VITE_API_URL: https://d1fz0dq26fxyum.cloudfront.net
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy frontend to S3
+        run: aws s3 sync web/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+
+      - name: Deploy backend to Lightsail
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/deploy_key.pem
+          chmod 600 ~/.ssh/deploy_key.pem
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
+
+          tar --exclude='node_modules' --exclude='dist' -czf /tmp/api-deploy.tar.gz api packages package.json package-lock.json
+
+          scp -i ~/.ssh/deploy_key.pem /tmp/api-deploy.tar.gz ubuntu@${{ secrets.LIGHTSAIL_HOST }}:~/api-deploy.tar.gz
+
+          ssh -i ~/.ssh/deploy_key.pem ubuntu@${{ secrets.LIGHTSAIL_HOST }} '
+            rm -rf ~/app_new &&
+            mkdir -p ~/app_new &&
+            tar -xzf ~/api-deploy.tar.gz -C ~/app_new &&
+            cp ~/app/api/.env ~/app_new/api/.env &&
+            cd ~/app_new &&
+            npm install --omit=dev --workspace=api --workspace=@event-logger/shared &&
+            rm -rf ~/app_old &&
+            mv ~/app ~/app_old &&
+            mv ~/app_new ~/app &&
+            cd ~/app/api &&
+            pm2 restart api --update-env &&
+            rm -rf ~/app_old ~/api-deploy.tar.gz
+          '
